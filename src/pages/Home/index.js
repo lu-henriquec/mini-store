@@ -1,10 +1,12 @@
 import React, { Component } from 'react';
-// import {  } from 'prop-types';
 import { connect } from 'react-redux';
+import { bindActionCreators } from 'redux';
 
 import { MdAddShoppingCart } from 'react-icons/md';
 import { formatPrice } from '../../util/format';
 import api from '../../services/api';
+
+import * as CartActions from '../../store/modules/cart/actions';
 
 import { ProductList } from './styles';
 
@@ -24,16 +26,14 @@ class Home extends Component {
     this.setState({ products: data });
   }
 
-  handleAddProduct = product => {
-    const { dispatch } = this.props;
-    dispatch({
-      type: 'ADD_TO_CART',
-      product,
-    });
+  handleAddProduct = id => {
+    const { addToCartRequest } = this.props;
+    addToCartRequest(id);
   };
 
   render() {
     const { products } = this.state;
+    const { amount } = this.props;
 
     return (
       <ProductList>
@@ -43,9 +43,13 @@ class Home extends Component {
             <strong>{prod.title}</strong>
             <span>{prod.priceFormatted}</span>
 
-            <button type='button' onClick={() => this.handleAddProduct(prod)}>
+            <button
+              type="button"
+              onClick={() => this.handleAddProduct(prod.id)}
+            >
               <div>
-                <MdAddShoppingCart sixe={16} color="#FFF" /> 3
+                <MdAddShoppingCart sixe={16} color="#FFF" />{' '}
+                {amount[prod.id] || 0}
               </div>
 
               <span>Adicionar ao carrinho</span>
@@ -57,4 +61,18 @@ class Home extends Component {
   }
 }
 
-export default connect()(Home);
+const mapStateToProps = state => ({
+  amount: state.cartReducer.reduce((amount, prod) => {
+    amount[prod.id] = prod.amount;
+
+    return amount;
+  }, {}),
+});
+
+const mapDispatchToProps = dispatch =>
+  bindActionCreators(CartActions, dispatch);
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Home);
